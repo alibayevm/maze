@@ -6,6 +6,8 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('rows', default=25, type=int, help='Number of rows in maze')
 parser.add_argument('cols', default=25, type=int, help='Number of columns in maze')
+parser.add_argument('--start', default=[-1, -1], type=int, nargs=2, help='The location of a starting cell in (row, col) format, e.g., --start 4 5 for row 4 and column 5')
+parser.add_argument('--target', default=[-1, -1], type=int, nargs=2, help='The location of a target cell in (row, col) format, e.g., --start 4 5 for row 4 and column 5')
 parser.add_argument('-b', '--skip_building_animation', default=False, type=bool, help='Make true to skip the step-by-step demonstration of how the maze is built.')
 parser.add_argument('-s', '--skip_searching_animation', default=False, type=bool, help='Make true to skip the step-by-step demonstration of searching algorithm.')
 
@@ -187,12 +189,22 @@ class Grid:
                     break
         
     def initialize_points(self):
-        start_row = random.randint(0, self.rows-1)
-        start_col = random.randint(0, self.cols-1)
+        args = parser.parse_args()
+        if args.start != [-1, -1]:
+            start_row = min(max(0, args.start[0]), self.rows-1)
+            start_col = min(max(0, args.start[1]), self.cols-1)
+        else:
+            start_row = random.randint(0, self.rows-1)
+            start_col = random.randint(0, self.cols-1)
+        
         self.start = start_row * self.cols + start_col
-
-        stop_row = random.randint(0, self.rows-1)
-        stop_col = random.randint(0, self.cols-1)
+        
+        if args.target != [-1, -1]:
+            stop_row = min(max(0, args.target[0]), self.rows-1)
+            stop_col = min(max(0, args.target[1]), self.cols-1)
+        else:
+            stop_row = random.randint(0, self.rows-1)
+            stop_col = random.randint(0, self.cols-1)
         self.stop = stop_row * self.cols + stop_col
 
         self.mark_cell(self.start, green)
