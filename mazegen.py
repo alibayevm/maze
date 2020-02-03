@@ -150,6 +150,7 @@ class Grid:
                 queue.append([r * self.cols + c, cell])
                 self.grid[r][c].visited_path = True
                 if r * self.cols + c == self.stop:
+                    cv2.destroyAllWindows()
                     self.grid[self.stop // self.cols][self.stop % self.cols].pair = cell
                     cv2.imshow('path finding', self.maze)
                     cv2.waitKey()
@@ -205,11 +206,16 @@ if __name__ == "__main__":
 
     g = Grid(args.rows, args.cols)
     g.prims_generator()
+    cv2.destroyAllWindows()
     cv2.imshow('final maze', g.maze)
     cv2.waitKey()
+    cv2.destroyAllWindows()
     g.initialize_points()
     cv2.imshow('final maze', g.maze)
     cv2.waitKey()
+    cv2.destroyAllWindows()
     g.find_path()
+    cv2.destroyAllWindows()
     cv2.imshow('path finding', g.maze)
     cv2.waitKey()
+    cv2.destroyAllWindows()
