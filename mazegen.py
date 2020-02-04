@@ -12,12 +12,12 @@ parser.add_argument('-b', '--skip_building_animation', default=False, type=bool,
 parser.add_argument('-s', '--skip_searching_animation', default=False, type=bool, help='Make true to skip the step-by-step demonstration of searching algorithm.')
 
 
-_MAX_RESOLUTION = 512 * 512
 red = (0, 0, 1)
 green = (1, 0, 0)
 blue = (8 / 255, 68 / 255, 0 / 255)
 yellow = (122/255, 245/255, 167/255)
 wait_time = 1
+window_name = 'maze'
 
 class Cell:
     def __init__(self, row, col):
@@ -100,7 +100,7 @@ class Grid:
             cv2.rectangle(self.maze, (pt1_x, pt1_y), (pt2_x, pt2_y), (255, 255, 255), thickness=-1)
             
             if not skip_building:
-                cv2.imshow('maze', self.maze)
+                cv2.imshow(window_name, self.maze)
                 cv2.waitKey(wait_time)
 
             self.unvisited -= 1
@@ -146,20 +146,20 @@ class Grid:
                 self.mark_cell(cell, yellow)
             
             if not skip_searching:
-                cv2.imshow('path finding', self.maze)
+                cv2.imshow(window_name, self.maze)
                 cv2.waitKey(wait_time)
             for [r, c] in neighbors:
                 queue.append([r * self.cols + c, cell])
                 self.grid[r][c].visited_path = True
                 if r * self.cols + c == self.stop:
-                    cv2.destroyAllWindows()
+                    # cv2.destroyAllWindows()
                     self.grid[self.stop // self.cols][self.stop % self.cols].pair = cell
-                    cv2.imshow('path finding', self.maze)
+                    cv2.imshow(window_name, self.maze)
                     cv2.waitKey()
 
                     # Backtrack here
                     current = cell
-                    cv2.destroyAllWindows()
+                    # cv2.destroyAllWindows()
                     while current != self.start:
                         curr_row = current // self.cols
                         curr_col = current % self.cols
@@ -182,7 +182,7 @@ class Grid:
                         pt2_y = (row_to + 1) * 20 - 1
                         cv2.rectangle(self.maze, (pt1_x, pt1_y), (pt2_x, pt2_y), blue, thickness=-1)
 
-                        cv2.imshow('maze', self.maze)
+                        cv2.imshow(window_name, self.maze)
                         cv2.waitKey(wait_time)
                         
                         current = prev
@@ -216,18 +216,20 @@ class Grid:
 if __name__ == "__main__":
     args = parser.parse_args()
 
+    cv2.namedWindow(window_name, flags=cv2.WINDOW_AUTOSIZE)
+
     g = Grid(args.rows, args.cols)
     g.prims_generator()
-    cv2.destroyAllWindows()
-    cv2.imshow('final maze', g.maze)
+    # cv2.destroyAllWindows()
+    cv2.imshow(window_name, g.maze)
     cv2.waitKey()
-    cv2.destroyAllWindows()
+    # cv2.destroyAllWindows()
     g.initialize_points()
-    cv2.imshow('final maze', g.maze)
+    cv2.imshow(window_name, g.maze)
     cv2.waitKey()
-    cv2.destroyAllWindows()
+    # cv2.destroyAllWindows()
     g.find_path()
-    cv2.destroyAllWindows()
-    cv2.imshow('path finding', g.maze)
+    # cv2.destroyAllWindows()
+    cv2.imshow(window_name, g.maze)
     cv2.waitKey()
     cv2.destroyAllWindows()
