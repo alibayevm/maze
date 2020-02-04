@@ -35,8 +35,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('rows_cols', nargs='*', type=int, help='Number of rows and columns in maze')
 parser.add_argument('--start', default=[-1, -1], type=int, nargs=2, help='The location of a starting cell in (row, col) format, e.g., --start 4 5 for row 4 and column 5')
 parser.add_argument('--target', default=[-1, -1], type=int, nargs=2, help='The location of a target cell in (row, col) format, e.g., --target 4 5 for row 4 and column 5')
-parser.add_argument('-b', '--skip_building_animation', action='store_true', help='Make true to skip the step-by-step demonstration of how the maze is built.')
-parser.add_argument('-s', '--skip_searching_animation', action='store_true', help='Make true to skip the step-by-step demonstration of searching algorithm.')
+parser.add_argument('-b', '--skip_building_animation', action='store_true', help='Skips the step-by-step demonstration of how the maze is built.')
+parser.add_argument('-s', '--skip_searching_animation', action='store_true', help='Skips the step-by-step demonstration of searching algorithm.')
 
 # Color values
 red = (0, 0, 1)
