@@ -3,21 +3,52 @@ import numpy as np
 import random
 import argparse
 
+# Flags for picking the start and target points
+start_was_picked = False
+target_was_picked = False
+start_row = None
+start_col = None
+target_row = None
+target_col = None
+
+# Callback function for mouse event
+def mark_points(event, x, y, flags, param):
+    global start_was_picked, target_was_picked
+    global start_row, start_col
+    global target_row, target_col
+
+    if start_was_picked and target_was_picked:
+        return
+    elif start_was_picked:
+        if event == cv2.EVENT_LBUTTONDOWN:
+            target_row = y
+            target_col = x
+            target_was_picked = True
+    else:
+        if event == cv2.EVENT_LBUTTONDOWN:
+            start_row = y
+            start_col = x 
+            start_was_picked = True
+
+# Parse the arguments from terminal
 parser = argparse.ArgumentParser()
-parser.add_argument('rows', default=25, type=int, help='Number of rows in maze')
-parser.add_argument('cols', default=25, type=int, help='Number of columns in maze')
+parser.add_argument('rows_cols', nargs='*', type=int, help='Number of rows and columns in maze')
 parser.add_argument('--start', default=[-1, -1], type=int, nargs=2, help='The location of a starting cell in (row, col) format, e.g., --start 4 5 for row 4 and column 5')
-parser.add_argument('--target', default=[-1, -1], type=int, nargs=2, help='The location of a target cell in (row, col) format, e.g., --start 4 5 for row 4 and column 5')
-parser.add_argument('-b', '--skip_building_animation', default=False, type=bool, help='Make true to skip the step-by-step demonstration of how the maze is built.')
-parser.add_argument('-s', '--skip_searching_animation', default=False, type=bool, help='Make true to skip the step-by-step demonstration of searching algorithm.')
+parser.add_argument('--target', default=[-1, -1], type=int, nargs=2, help='The location of a target cell in (row, col) format, e.g., --target 4 5 for row 4 and column 5')
+parser.add_argument('-b', '--skip_building_animation', action='store_true', help='Make true to skip the step-by-step demonstration of how the maze is built.')
+parser.add_argument('-s', '--skip_searching_animation', action='store_true', help='Make true to skip the step-by-step demonstration of searching algorithm.')
 
-
+# Color values
 red = (0, 0, 1)
-green = (1, 0, 0)
-blue = (8 / 255, 68 / 255, 0 / 255)
-yellow = (122/255, 245/255, 167/255)
+blue = (1, 0, 0)
+dark_green = (8 / 255, 68 / 255, 0 / 255)
+bright_green = (122 / 255, 245 / 255, 167 / 255)
+
+# Maze window parameters
 wait_time = 1
 window_name = 'maze'
+cell_size = 20
+
 
 class Cell:
     def __init__(self, row, col):
@@ -31,7 +62,7 @@ class Cell:
 
 class Grid:
     def __init__(self, rows, cols):
-        self.rows = rows 
+        self.rows = rows
         self.cols = cols
         self.unvisited = self.rows * self.cols
         self.grid = [[None for _ in range(cols)] for _ in range(rows)]
@@ -39,7 +70,9 @@ class Grid:
             for c in range(cols):
                 self.grid[r][c] = Cell(r, c)
         
-        self.maze = np.zeros((20 * self.rows + 1, 20 * self.cols + 1, 3))
+        self.maze = np.zeros((cell_size * self.rows + 1, cell_size * self.cols + 1, 3))
+        self.start_was_picked = False
+        self.target_was_picked = False
             
 
     def in_bounds(self, r, c):
@@ -60,7 +93,6 @@ class Grid:
         start_col = random.randint(0, self.cols-1)
         args = parser.parse_args()
         skip_building = args.skip_building_animation
-        
         
         self.grid[start_row][start_col].visited = True
         self.unvisited -= 1
@@ -93,10 +125,10 @@ class Grid:
             col_from = min(curr_col, col)
             col_to = max(curr_col, col)
             # Draw the line from current
-            pt1_x = col_from * 20 + 1
-            pt1_y = row_from * 20 + 1
-            pt2_x = (col_to + 1) * 20 - 1
-            pt2_y = (row_to + 1) * 20 - 1
+            pt1_x = col_from * cell_size + 1
+            pt1_y = row_from * cell_size + 1
+            pt2_x = (col_to + 1) * cell_size - 1
+            pt2_y = (row_to + 1) * cell_size - 1
             cv2.rectangle(self.maze, (pt1_x, pt1_y), (pt2_x, pt2_y), (255, 255, 255), thickness=-1)
             
             if not skip_building:
@@ -108,10 +140,10 @@ class Grid:
         cv2.imwrite('maze.jpg', self.maze * 255)
 
     def mark_cell(self, cell_index, color):
-        pt1_x = cell_index % self.cols * 20 + 1
-        pt1_y = cell_index // self.cols * 20 + 1
-        pt2_x = (cell_index % self.cols + 1) * 20 - 1
-        pt2_y = (cell_index // self.cols + 1) * 20 - 1
+        pt1_x = cell_index % self.cols * cell_size + 1
+        pt1_y = cell_index // self.cols * cell_size + 1
+        pt2_x = (cell_index % self.cols + 1) * cell_size - 1
+        pt2_y = (cell_index // self.cols + 1) * cell_size - 1
 
         cv2.rectangle(self.maze, (pt1_x, pt1_y), (pt2_x, pt2_y), color, thickness=-1)
 
@@ -143,7 +175,7 @@ class Grid:
             neighbors = self.get_neighbors_path(cell_row, cell_col)
 
             if cell != self.start and cell != self.stop:
-                self.mark_cell(cell, yellow)
+                self.mark_cell(cell, bright_green)
             
             if not skip_searching:
                 cv2.imshow(window_name, self.maze)
@@ -152,14 +184,12 @@ class Grid:
                 queue.append([r * self.cols + c, cell])
                 self.grid[r][c].visited_path = True
                 if r * self.cols + c == self.stop:
-                    # cv2.destroyAllWindows()
                     self.grid[self.stop // self.cols][self.stop % self.cols].pair = cell
                     cv2.imshow(window_name, self.maze)
                     cv2.waitKey()
 
                     # Backtrack here
                     current = cell
-                    # cv2.destroyAllWindows()
                     while current != self.start:
                         curr_row = current // self.cols
                         curr_col = current % self.cols
@@ -176,11 +206,11 @@ class Grid:
                         col_from = min(curr_col, col)
                         col_to = max(curr_col, col)
                         # Draw the line from current
-                        pt1_x = col_from * 20 + 1
-                        pt1_y = row_from * 20 + 1
-                        pt2_x = (col_to + 1) * 20 - 1
-                        pt2_y = (row_to + 1) * 20 - 1
-                        cv2.rectangle(self.maze, (pt1_x, pt1_y), (pt2_x, pt2_y), blue, thickness=-1)
+                        pt1_x = col_from * cell_size + 1
+                        pt1_y = row_from * cell_size + 1
+                        pt2_x = (col_to + 1) * cell_size - 1
+                        pt2_y = (row_to + 1) * cell_size - 1
+                        cv2.rectangle(self.maze, (pt1_x, pt1_y), (pt2_x, pt2_y), dark_green, thickness=-1)
 
                         cv2.imshow(window_name, self.maze)
                         cv2.waitKey(wait_time)
@@ -191,14 +221,14 @@ class Grid:
     def initialize_points(self):
         args = parser.parse_args()
         if args.start != [-1, -1]:
-            start_row = min(max(0, args.start[0]), self.rows-1)
-            start_col = min(max(0, args.start[1]), self.cols-1)
+            strt_row = min(max(0, args.start[0]), self.rows-1)
+            strt_col = min(max(0, args.start[1]), self.cols-1)
         else:
-            start_row = random.randint(0, self.rows-1)
-            start_col = random.randint(0, self.cols-1)
+            strt_row = random.randint(0, self.rows-1)
+            strt_col = random.randint(0, self.cols-1)
         
-        self.start = start_row * self.cols + start_col
-        
+        self.start = strt_row * self.cols + strt_col
+
         if args.target != [-1, -1]:
             stop_row = min(max(0, args.target[0]), self.rows-1)
             stop_col = min(max(0, args.target[1]), self.cols-1)
@@ -207,7 +237,37 @@ class Grid:
             stop_col = random.randint(0, self.cols-1)
         self.stop = stop_row * self.cols + stop_col
 
-        self.mark_cell(self.start, green)
+        
+        cv2.setMouseCallback(window_name, mark_points)
+        while True:
+            cv2.imshow(window_name, self.maze)
+
+            if start_was_picked and not self.start_was_picked:
+                global start_row
+                global start_col
+                start_row = start_row // cell_size
+                start_row = min(start_row, self.rows)
+                start_col = start_col // cell_size
+                start_col = min(start_col, self.cols)
+                self.start = start_row * self.cols + start_col
+                self.start_was_picked = True
+                self.mark_cell(self.start, blue)
+
+            if target_was_picked and not self.target_was_picked:
+                global target_row
+                global target_col
+                target_row = target_row // cell_size
+                target_row = min(target_row, self.rows)
+                target_col = target_col // cell_size
+                target_col = min(target_col, self.cols)
+                self.stop = target_row * self.cols + target_col
+                self.target_was_picked = True
+                break
+            
+            if cv2.waitKey(1) > 0:
+                break
+        
+        self.mark_cell(self.start, blue)
         self.mark_cell(self.stop, red)
         
         cv2.imwrite('maze_with_points.jpg', self.maze * 255)
@@ -215,21 +275,23 @@ class Grid:
     
 if __name__ == "__main__":
     args = parser.parse_args()
+    if len(args.rows_cols) == 0:
+        rows = random.randint(3, 50)
+        cols = random.randint(3, 50)
+    elif len(args.rows_cols) == 1:
+        rows = args.rows_cols[0]
+        cols = random.randint(3, 50)
+    else:
+        [rows, cols] = args.rows_cols[:2]
 
     cv2.namedWindow(window_name, flags=cv2.WINDOW_AUTOSIZE)
 
-    g = Grid(args.rows, args.cols)
+    g = Grid(rows, cols)
     g.prims_generator()
-    # cv2.destroyAllWindows()
-    cv2.imshow(window_name, g.maze)
-    cv2.waitKey()
-    # cv2.destroyAllWindows()
     g.initialize_points()
     cv2.imshow(window_name, g.maze)
     cv2.waitKey()
-    # cv2.destroyAllWindows()
     g.find_path()
-    # cv2.destroyAllWindows()
     cv2.imshow(window_name, g.maze)
     cv2.waitKey()
     cv2.destroyAllWindows()
